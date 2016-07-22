@@ -141,36 +141,31 @@ cross.test.real.axis <- function(test.data) {
 }
 
 shift <- function(x1, y1, x2, y2, x3, y3, x4, y4) {
-    J <- cbind(
-      c(y1 - y2, x3 - x4),
+    M <- cbind(
+      c(y1 - y2, y3 - y4),
       c(x2 - x1, x4 - x3))
-    J <- det(J)
-    det1 <- y1 * x2 - y2 * x1
-    det2 <- y3 * x4 - y4 * x3
+
+    b <- c(y2 * x1 - y1 * x2, x3 * y4 - x4 * y3)
+
 
     function(x = NULL, y = NULL, point = NULL) {
         if (is.null(point)) {
-            shifted.x <- (x3 - x4) * x - (x1 - x2) * y + (x3 - x4) *  det1 - (x1 - x2) *  det2
-            shifted.x <- shifted.x / J
-
-            shifted.y <- (y3 - y4) * x - (y1 - y2) * y + (y3 - y4) * det1 - (y1 - y2) * det2
-            shifted.y <- shifted.y / J
+            shifted.x <- M[1, 1] * x + M[1, 2]*y + b[1]
+            shifted.y <- M[2, 1] * x + M[2, 2] * y + b[2]
+           
 
             cbind(x = shifted.x, y = shifted.y)
+
         } else {
-            c((x3 - x4) * (point[1] + det1)
-            - (x1 - x2) * (point[2] + det2),
-                  (y3 - y4) * (point[1] + det1)
-                  - (y1 - y2) * (point[2] + det2)) / J
+           M %*% point + b
         }
     }
 }
 
-cross.test.data.shifted <- function(test.data) {
-    print("means")
-    print(c(x = mean(test.data[, "x"]), y = mean(test.data[, "y"])))
-    cfs <- make.coeffs(c(test.data[1,]), c(test.data[100,]))
-    print(cfs)
+cross.test.data.shifted <- function(test.data) {  
+    print(c(mean.x = mean(test.data[, "x"]), mean.y = mean(test.data[, "y"]),
+            sd.x = sd(test.data[, "x"]), sd.y = sd(test.data[, "y"])))
+       
 }
 
 cross.test.shifted <- function(a1.center, a1.sd, a2.center, a2.sd, b1.center, b1.sd, b2.center, b2.sd, test.data) {
@@ -180,8 +175,7 @@ cross.test.shifted <- function(a1.center, a1.sd, a2.center, a2.sd, b1.center, b1
     shift.fun <- shift(a1.center[1], a1.center[2], a2.center[1], a2.center[2],
                         b1.center[1], b1.center[2], b2.center[1], b2.center[2])
 
-    f1.vect <- a2.center - a1.center
-    f2.vect <- b2.center - b1.center
+   
 
     shifted <- shift.fun(to.draw[, "x"], to.draw[, "y"])
 
@@ -193,17 +187,25 @@ cross.test.shifted <- function(a1.center, a1.sd, a2.center, a2.sd, b1.center, b1
         s <- shift.fun(point = p1)
         s2 <- shift.fun(point = p2)
         if (s[1] == s2[1]) {
-            abline(v = s[1], ...)
+            abline(v = s[1], ...)           
         } else {
             abline(coef = make.coeffs(s, s2), ...)
+           
         }
 
-
+        if (exists("label")) {
+            text(s[1], s[2], label)
+        }
     }
     cross.test.data.shifted(shifted)
 
     draw.shifted(a1.center, a2.center)
     draw.shifted(b1.center, b2.center)
+
+    draw.shifted(a1.center, c(a1.center[1], 0), col = "blue", lty = "dotted",label="a1")
+    draw.shifted(a2.center, c(a2.center[1], 0), col = "blue", lty = "dotted", label = "a2")
+    draw.shifted(b1.center, c(b1.center[1], 0), col = "blue", lty = "dotted", label = "b1")
+    draw.shifted(b2.center, c(b2.center[1], 0), col = "blue", lty = "dotted", label = "b2")
 
 
     draw.shifted(a1.center + c(0, a1.sd), a2.center - c(0, a2.sd), col = "green", lty = "dotted")

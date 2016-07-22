@@ -1,63 +1,7 @@
 
-t <- function(x1, y1, x2, y2) {
-    cbind(
-      k = (y1 - y2) / (x1 - x2),
-      b = -(x1 / (x1 - x2)) * (y1 - y2) + y1
-      )
-}
-
-
-t.var <- function(x1, var1, x2, var2) {
-    cbind(
-      k = (var1 + var2) / ((x1 - x2)^2),
-      b = (x1 / (x1 - x2) +1) ^ 2 * var1 + (x1 / (x1 - x2)) ^ 2 * var2
-      )
-
-}
-
-cross.cov <- function(varb1, vark1, varb2, vark2, r) {
-
-}
-
-t.cov <- function(x1,  x2,var1,var2) {
-    e <- 1 / (x1 - x2)
-    e*(e*x1+1)*var1 - e*e*x2*var2
-}
-
-test.sd <- function(c1, c2, sd1, sd2,x1,x2,test.count=100000) {
-    y1 <- qnorm(runif(1:test.count, 0, 1), mean = c1, sd = sd1)
-    y2 <- qnorm(runif(1:test.count, 0, 1), mean = c2, sd = sd2)
-    coeffs <- t(x1, y1, x2,y2)
-    fact.mean.k <- mean(coeffs[, "k"])
-    fact.mean.b <- mean(coeffs[, "b"])
-    fact.sd.k <- var(coeffs[, "k"])
-    fact.sd.b <- var(coeffs[, "b"])
-
-    pred <- t(x1, c1, x2, c2)
-    pred2 <- t.var(x1, sd1^2, x2, sd2^2)
-
-    pred.mean.k <- pred[1,"k"]
-    pred.mean.b <- pred[1,"b"]
-    pred.sd.k <- pred2[1,"k"]
-    pred.sd.b <- pred2[1, "b"]
-    c <- t.cov(x1, x2, sd1 ^ 2, sd2 ^ 2)# /  (sd1 * sd2)
-
-    e<-matrix(c(fact.mean.k, fact.mean.b, fact.sd.k, fact.sd.b, pred.mean.k, pred.mean.b, pred.sd.k, pred.sd.b), ncol = 2)
-    colnames(e) <- c("fact", "pred")
-    rownames(e) <- c("mean.k", "mean.b", "var.k", "var.b")
-    
-    list(base = e, fact.cov = cor(coeffs), pred.cov = matrix(c(1,c,c,1),byrow=T,ncol=2))
-}
 
 
 
-cross <- function(k1, b1, k2, b2) {
-    cbind(
-          x = (b2 - b1) / (k1 - k2),
-          y = (b2 - b1) / (k1 - k2)*k1+b1
-           )
-
-}
 
 test.cross <- function(mean1, mean2, cov1, cov2,  test.count = 1000000) {
     f1.k <- qnorm(runif(1:test.count, 0, 1), mean = mean1["k"], sd = sqrt(cov1[1,1]))
@@ -105,29 +49,12 @@ test.cross <- function(mean1, mean2, cov1, cov2,  test.count = 1000000) {
 #lines(x, mid.y - var.y, type = "l", col = "green")
 
 
-form.draw <- function(x1, x2, x3, x4, y1, y2, y3, y4, var1, var2, var3, var4, x.borders, y.borders,shifted=F) {
+form.draw <- function(x1, x2, x3, x4, y1, y2, y3, y4, var1, var2, var3, var4, x.borders, y.borders, shifted = F) {
 
-    x <- seq(x.borders[1], x.borders[2], by = .01)
-    y <- seq(y.borders[1], y.borders[2], by = .001)
+    x <- seq(x.borders[1], x.borders[2], by = (x.borders[2] - x.borders[1]) / 1000)
+    y <- seq(y.borders[1], y.borders[2], by = (y.borders[2] - y.borders[1]) / 1000)
     J <- y3 * x1 - y1 * x3 + y1 * x4 + y2 * x3 - y3 * x2 - y4 * x1 - y2 * x4 + y4 * x2
-    print(J)
-    #v1 <- c(
-           #(x1 - x2),
-           #(y1 - y2))
-    #v2 <- c(
-          #(x3 - x4),
-          #(y3 - y4))
-    #cross <- c(9.75, -4.625)
-    #print(v1)
-    #print(v2)
-    #axis <- matrix(
-        #c(cross, cross + v1 / J * 4,
-        #cross, cross - v1 / J * 4,
-        #cross, cross + v2 / J * 4,
-        #cross, cross - v2 / J * 4),
-        #ncol = 4, byrow = T)
-    #segments(x0 = axis[, 1], y0 = axis[, 2], x1 = axis[, 3], y1 = axis[, 4], col = "blue")
-    #print("pred axis")
+    print(J)  
 
     f3 <- function(xa, ya) {
 
@@ -143,24 +70,42 @@ form.draw <- function(x1, x2, x3, x4, y1, y2, y3, y4, var1, var2, var3, var4, x.
     }
 
     f4 <- function(xa, ya) {
-        o.shift <- (x3 - x4) * (y1 * x2 - y2 * x1) - (x1 - x2) * (y3 * x4 - y4 * x3) - xa * (x3 - x4) - ya * (x1 - x2)
+        const.shift <- ((x3 - x4) * (y1 * x2 - y2 * x1) - (x1 - x2) * (y3 * x4 - y4 * x3))
+        var.shift<-ya * (x1 - x2) - xa * (x3 - x4)             
+        o.shift <- var.shift - const.shift
+        o.shift <- o.shift / J
 
-        o1 <- sqrt(var1 ^ 2 * (x2 * J + o.shift) ^ 2 + var2 ^ 2 * (x1 * J + o.shift) ^ 2) / J
-        o2 <- sqrt(var3 ^ 2 * (x4 * J + o.shift) ^ 2 + var4 ^ 2 * (x3 * J + o.shift) ^ 2) / J
-
-        c1 <- exp( - xa ^ 2 / (2 * o2 ^ 2)
-                   - ya ^ 2 / (2 * o1 ^ 2)) / (2 * pi * o1 * o2)
+        o1 <- sqrt(var1 ^ 2 * (o.shift - x2) ^ 2 + var2 ^ 2 * (o.shift - x1) ^ 2)
+        o2 <- sqrt(var3 ^ 2 * (o.shift - x4) ^ 2 + var4 ^ 2 * (o.shift - x3) ^ 2)
+        print(c(const.shift = const.shift,
+                mean.shift = mean(var.shift), sd.shift = sd(var.shift),
+                mean.o1 = mean(o1), mean.o2 = mean(o2), sd.o1 = sd(o1), sd.o2 = sd(o2),
+                range.o1=range(o1),range.o2=range(o2)))
+        
+        c1 <- exp( - (xa ^ 2 / (2 * o1 ^ 2) + ya ^ 2 / (2 * o2 ^ 2))) / (2 * pi * o1 * o2)
 
         c1
     }
+
+    cut <- function(xa, ya) {
+        o.shift <- - ((x3 - x4) * (y1 * x2 - y2 * x1) - (x1 - x2) * (y3 * x4 - y4 * x3))
+        o.shift <- (ya * (x1 - x2) - xa * (x3 - x4) + o.shift) / J
+        
+        o1 <- sqrt(var1 ^ 2 * (o.shift - x2) ^ 2 + var2 ^ 2 * (o.shift - x1) ^ 2)
+        o2 <- sqrt(var3 ^ 2 * (o.shift - x4) ^ 2 + var4 ^ 2 * (o.shift - x3) ^ 2)
+       # print(c(calc.sd1=o1,calc.sd2=o2))
+        c1 <- (xa ^ 2 / (2*o1 ^ 2) + ya ^ 2 / (2*o2 ^ 2))
+        c1*5
+    }
+    cut <- outer(x, y, FUN = cut)
     if (shifted) {
         e <- outer(x, y, FUN = f4)
+    } else {
+        e <- outer(x, y, FUN = f3)
     }
-        else {
-            e <- outer(x, y, FUN = f3)
-        }
-    contour(x, y, e, add = T, levels=c(0.05,.1,.3,3,7.9), col = "red")
-
+      contour(x, y, e, add = T, levels=c(0.005,0.05,.1,.3,4), col = "red")
+    #contour(x, y, e, add = T, nlevels = 5, col = "red")
+    contour(x, y, cut, add = T, levels = c(10, 20, 30,40, 50), col = "blue")
 }
 
 
@@ -171,10 +116,10 @@ pair.test <- function(a1, a2, a3, a4, x.borders = c(0, 1), y.borders = c(0, 1)) 
     plot.new()
     plot.window(xlim = x.borders, ylim = y.borders)
     test.data <- prepare.checks(a1[1:2], a1[3], a2[1:2], a2[3], a3[1:2], a3[3], a4[1:2], a4[3], test.count = 100000)
-#    cross.test.data(test.data)
+  
     cross.test.shifted(a1[1:2], a1[3], a2[1:2], a2[3], a3[1:2], a3[3], a4[1:2], a4[3], test.data)
-    form.draw(a1[1], a2[1], a3[1], a4[1], a1[2], a2[2], a3[2], a4[2], a1[3], a2[3], a3[3], a4[3],
-       x.borders = x.borders, y.borders = y.borders,shifted = T)
+    #form.draw(a1[1], a2[1], a3[1], a4[1], a1[2], a2[2], a3[2], a4[2], a1[3], a2[3], a3[3], a4[3],
+       #x.borders = x.borders, y.borders = y.borders,shifted = T)
 
     #plot.new()
     #plot.window(xlim = x.borders, ylim = y.borders)
@@ -183,4 +128,4 @@ pair.test <- function(a1, a2, a3, a4, x.borders = c(0, 1), y.borders = c(0, 1)) 
        #x.borders = x.borders, y.borders = y.borders)
 }
 
-pair.test(c(-2,2,.01),c(-1,1,.01),c(-2,-2,.1),c(-1,-1,.1),c(-1,1),c(-.1,.1))
+pair.test(c(-20,-20,.01),c(-30,-30,.01),c(-5,5,10),c(-1,1,10),c(-20,10),c(-100,100))
