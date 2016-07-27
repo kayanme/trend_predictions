@@ -62,6 +62,11 @@ make.coeffs <- function(p1, p2) {
     c(b = p1[2] - vect[2] / vect[1] * p1[1], k = vect[2] / vect[1])
 }
 
+make.coeffs.t <- function(x0, y0, x1, y1) {
+
+    cbind(b = y0 - (y1 - y0) / (x1 - x0) * x0, k = (y1 - y0) / (x1 - x0))
+}
+
 dens.groups <- function(p) {
     lb <- min(p[!is.na(p[, "d"]), "d"])
     ub <- max(p[!is.na(p[, "d"]), "d"])
@@ -93,6 +98,17 @@ prepare.checks <- function(a1.center, a1.sd, a2.center, a2.sd, b1.center, b1.sd,
     cross.test.check(f1, f2)
 }
 
+prepare.checks.pshift <- function(a1.center, a1.sd, a2.center, a2.sd,  test.count = 100000) {
+    make.coeffs.t(
+                x0 = seq(a1.center[1], a1.center[1], length = test.count),
+                y0 = qnorm(runif(1:test.count, 0, 1), mean = a1.center[2], sd = a1.sd),
+                x1 = seq(a2.center[1], a2.center[1], length = test.count),
+                y1 = qnorm(runif(1:test.count, 0, 1), mean = a2.center[2], sd = a2.sd))
+
+   
+}
+
+
 cross.test.data <- function(test.data) {
     print("means")
     print(c(x = mean(test.data[, "x"]), y = mean(test.data[, "y"])))
@@ -104,24 +120,9 @@ cross.test.data <- function(test.data) {
 }
 
 cross.test.real <- function(a1.center, a1.sd, a2.center, a2.sd, b1.center, b1.sd, b2.center, b2.sd, test.data) {
-    to.draw <- test.data
-    f1.vect <- a2.center - a1.center
-    f2.vect <- b2.center - b1.center
-
-  
+    to.draw <- test.data 
     lines(to.draw[, "x"], to.draw[, "y"], type = "p", col = "black")   
-    abline(coef = make.coeffs(a1.center, a2.center))
-    abline(coef = make.coeffs(b1.center, b2.center))
-
-    abline(coef = make.coeffs(a1.center + c(0, a1.sd), a2.center - c(0, a2.sd)), col = "green", lty = "dotted")
-    abline(coef = make.coeffs(a1.center - c(0, a1.sd), a2.center + c(0, a2.sd)), col = "green", lty = "dotted")
-    abline(coef = make.coeffs(a1.center + c(0, a1.sd), a2.center + c(0, a2.sd)), col = "red", lty = "dotted")
-    abline(coef = make.coeffs(a1.center - c(0, a1.sd), a2.center - c(0, a2.sd)), col = "red", lty = "dotted")
-
-    abline(coef = make.coeffs(b1.center + c(0, b1.sd), b2.center + c(0, b2.sd)), col = "red", lty = "dotted")
-    abline(coef = make.coeffs(b1.center - c(0, b1.sd), b2.center + c(0, b2.sd)), col = "green", lty = "dotted")
-    abline(coef = make.coeffs(b1.center + c(0, b1.sd), b2.center - c(0, b2.sd)), col = "green", lty = "dotted")
-    abline(coef = make.coeffs(b1.center - c(0, b1.sd), b2.center - c(0, b2.sd)), col = "red", lty = "dotted")
+  
 }
 
 cross.test.real.density <- function(test.data) {
@@ -129,15 +130,51 @@ cross.test.real.density <- function(test.data) {
     contour(as.numeric(rownames(d$matr)), as.numeric(colnames(d$matr)), d$matr, add = T, nlevels = 5, col = "blue")
 }
 
-cross.test.real.axis <- function(test.data) {
-    cross <- c(mean(test.data[, "x"]), mean(test.data[, "y"]))
-    axis <- matrix(
-    c(cross, cross + eig$vectors[, 1] * eig$values[1] * 10,
-    cross, cross - eig$vectors[, 1] * eig$values[1] * 10,
-    cross, cross + eig$vectors[, 2] * eig$values[2] * 10,
-    cross, cross - eig$vectors[, 2] * eig$values[2] * 10),
-    ncol = 4, byrow = T)
-    segments(x0 = axis[, 1], y0 = axis[, 2], x1 = axis[, 3], y1 = axis[, 4], col = "blue")
+cross.test.real.axis <- function(a1.center, a1.sd, a2.center, a2.sd, b1.center, b1.sd, b2.center, b2.sd, test.data) {
+    to.draw <- test.data
+    abline(coef = make.coeffs(a1.center, a2.center))
+    abline(coef = make.coeffs(b1.center, b2.center))
+
+
+    var1 <- a1.sd ^ 2
+    var2 <- a2.sd ^ 2
+    x0 <- var1 / (var1 + var2) * (a2.center[1] - a1.center[1]) + a1.center[1]
+    y0 <- var1 * var2 / (var1 + var2)
+    line.x <- seq(min(to.draw[, "x"]) - 5, max(to.draw[, "x"]) + 5, by = .1)
+    cf.1 <- make.coeffs(a1.center, a2.center)
+    u <- sqrt(((var2 - y0) / (a2.center[1] - x0) ^ 2) * (line.x - x0) ^ 2 + y0)
+    lines(line.x, u * 3 + cf.1["k"] * line.x + cf.1["b"], col = "green", lty = "dotted", type = "l")
+    lines(line.x, - u * 3 + cf.1["k"] * line.x + cf.1["b"], col = "green", lty = "dotted", type = "l")
+
+
+    var3 <- b1.sd ^ 2
+    var4 <- b2.sd ^ 2
+    x0 <- var3 / (var3 + var2) * (b2.center[1] - b1.center[1]) + b1.center[1]
+    y0 <- var3 * var4 / (var3 + var4)
+
+    cf.2 <- make.coeffs(b1.center, b2.center)
+    u <- sqrt(((var4 - y0) / (b2.center[1] - x0) ^ 2) * (line.x - x0) ^ 2 + y0)
+    lines(line.x, u * 3 + cf.2["k"] * line.x + cf.2["b"], col = "red", lty = "dotted", type = "l")
+    lines(line.x, - u * 3 + cf.2["k"] * line.x + cf.2["b"], col = "red", lty = "dotted", type = "l")
+
+    #abline(coef = make.coeffs(a1.center + c(0, a1.sd), a2.center - c(0, a2.sd)), col = "green", lty = "dotted")
+    #abline(coef = make.coeffs(a1.center - c(0, a1.sd), a2.center + c(0, a2.sd)), col = "green", lty = "dotted")
+    #abline(coef = make.coeffs(a1.center + c(0, a1.sd), a2.center + c(0, a2.sd)), col = "red", lty = "dotted")
+    #abline(coef = make.coeffs(a1.center - c(0, a1.sd), a2.center - c(0, a2.sd)), col = "red", lty = "dotted")
+
+    #abline(coef = make.coeffs(b1.center + c(0, b1.sd), b2.center + c(0, b2.sd)), col = "red", lty = "dotted")
+    #abline(coef = make.coeffs(b1.center - c(0, b1.sd), b2.center + c(0, b2.sd)), col = "green", lty = "dotted")
+    #abline(coef = make.coeffs(b1.center + c(0, b1.sd), b2.center - c(0, b2.sd)), col = "green", lty = "dotted")
+    #abline(coef = make.coeffs(b1.center - c(0, b1.sd), b2.center - c(0, b2.sd)), col = "red", lty = "dotted")
+
+    #cross <- c(mean(test.data[, "x"]), mean(test.data[, "y"]))
+    #axis <- matrix(
+    #c(cross, cross + eig$vectors[, 1] * eig$values[1] * 10,
+    #cross, cross - eig$vectors[, 1] * eig$values[1] * 10,
+    #cross, cross + eig$vectors[, 2] * eig$values[2] * 10,
+    #cross, cross - eig$vectors[, 2] * eig$values[2] * 10),
+    #ncol = 4, byrow = T)
+    #segments(x0 = axis[, 1], y0 = axis[, 2], x1 = axis[, 3], y1 = axis[, 4], col = "blue")
 }
 
 shift <- function(x1, y1, x2, y2, x3, y3, x4, y4) {
@@ -176,24 +213,37 @@ cross.test.shifted <- function(a1.center, a1.sd, a2.center, a2.sd, b1.center, b1
                         b1.center[1], b1.center[2], b2.center[1], b2.center[2])
 
    
-
     shifted <- shift.fun(to.draw[, "x"], to.draw[, "y"])
 
     lines(shifted[, 1], shifted[, 2], type = "p", col = "black")
 
+}
+
+cross.test.shifted.axis <- function(a1.center, a1.sd, a2.center, a2.sd, b1.center, b1.sd, b2.center, b2.sd, test.data) {
+
+    to.draw <- test.data
+
+    shift.fun <- shift(a1.center[1], a1.center[2], a2.center[1], a2.center[2],
+                        b1.center[1], b1.center[2], b2.center[1], b2.center[2])
+
+
+
+    shifted <- shift.fun(to.draw[, "x"], to.draw[, "y"])
+   
+
 
     lines(mean(shifted[, 1]), mean(shifted[, 2]), type = "p", col = "red")
-    draw.shifted <- function(p1, p2, ...) {
+    draw.shifted <- function(p1, p2,label=NULL, ...) {
         s <- shift.fun(point = p1)
         s2 <- shift.fun(point = p2)
         if (s[1] == s2[1]) {
-            abline(v = s[1], ...)           
+            abline(v = s[1], ...)
         } else {
             abline(coef = make.coeffs(s, s2), ...)
-           
+
         }
 
-        if (exists("label")) {
+        if (!is.null("label")) {
             text(s[1], s[2], label)
         }
     }
@@ -202,7 +252,7 @@ cross.test.shifted <- function(a1.center, a1.sd, a2.center, a2.sd, b1.center, b1
     draw.shifted(a1.center, a2.center)
     draw.shifted(b1.center, b2.center)
 
-    draw.shifted(a1.center, c(a1.center[1], 0), col = "blue", lty = "dotted",label="a1")
+    draw.shifted(a1.center, c(a1.center[1], 0), col = "blue", lty = "dotted", label = "a1")
     draw.shifted(a2.center, c(a2.center[1], 0), col = "blue", lty = "dotted", label = "a2")
     draw.shifted(b1.center, c(b1.center[1], 0), col = "blue", lty = "dotted", label = "b1")
     draw.shifted(b2.center, c(b2.center[1], 0), col = "blue", lty = "dotted", label = "b2")

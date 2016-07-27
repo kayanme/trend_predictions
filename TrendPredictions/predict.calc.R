@@ -51,8 +51,8 @@ test.cross <- function(mean1, mean2, cov1, cov2,  test.count = 1000000) {
 
 form.draw <- function(x1, x2, x3, x4, y1, y2, y3, y4, var1, var2, var3, var4, x.borders, y.borders, shifted = F) {
 
-    x <- seq(x.borders[1], x.borders[2], by = (x.borders[2] - x.borders[1]) / 1000)
-    y <- seq(y.borders[1], y.borders[2], by = (y.borders[2] - y.borders[1]) / 1000)
+    x <- seq(x.borders[1], x.borders[2], by = (x.borders[2] - x.borders[1]) / 10000)
+    y <- seq(y.borders[1], y.borders[2], by = (y.borders[2] - y.borders[1]) / 10000)
     J <- y3 * x1 - y1 * x3 + y1 * x4 + y2 * x3 - y3 * x2 - y4 * x1 - y2 * x4 + y4 * x2
     print(J)  
 
@@ -103,9 +103,10 @@ form.draw <- function(x1, x2, x3, x4, y1, y2, y3, y4, var1, var2, var3, var4, x.
     } else {
         e <- outer(x, y, FUN = f3)
     }
-      contour(x, y, e, add = T, levels=c(0.005,0.05,.1,.3,4), col = "red")
-    #contour(x, y, e, add = T, nlevels = 5, col = "red")
-    contour(x, y, cut, add = T, levels = c(10, 20, 30,40, 50), col = "blue")
+      contour(x, y, e, add = T, levels=c(0.0005,0.005,.01,.03,4), col = "red")
+ #   contour(x, y, e, add = T, nlevels = 5, col = "red")
+    #  contour(x, y, cut, add = T, levels = c(1, 20, 30,40, 50), col = "blue")
+#    contour(x, y, cut, add = T, nlevels = 5, col = "blue")
 }
 
 
@@ -117,15 +118,17 @@ pair.test <- function(a1, a2, a3, a4, x.borders = c(0, 1), y.borders = c(0, 1)) 
     plot.window(xlim = x.borders, ylim = y.borders)
     test.data <- prepare.checks(a1[1:2], a1[3], a2[1:2], a2[3], a3[1:2], a3[3], a4[1:2], a4[3], test.count = 100000)
   
-    cross.test.shifted(a1[1:2], a1[3], a2[1:2], a2[3], a3[1:2], a3[3], a4[1:2], a4[3], test.data)
+    #cross.test.shifted.axis(a1[1:2], a1[3], a2[1:2], a2[3], a3[1:2], a3[3], a4[1:2], a4[3], test.data)
+    #cross.test.shifted(a1[1:2], a1[3], a2[1:2], a2[3], a3[1:2], a3[3], a4[1:2], a4[3], test.data)
     #form.draw(a1[1], a2[1], a3[1], a4[1], a1[2], a2[2], a3[2], a4[2], a1[3], a2[3], a3[3], a4[3],
        #x.borders = x.borders, y.borders = y.borders,shifted = T)
 
-    #plot.new()
-    #plot.window(xlim = x.borders, ylim = y.borders)
-    #cross.test.real(a1[1:2], a1[3], a2[1:2], a2[3], a3[1:2], a3[3], a4[1:2], a4[3], test.data)
-    #form.draw(a1[1], a2[1], a3[1], a4[1], a1[2], a2[2], a3[2], a4[2], a1[3], a2[3], a3[3], a3[3],
-       #x.borders = x.borders, y.borders = y.borders)
+    plot.new()
+    plot.window(xlim = x.borders, ylim = y.borders)
+    cross.test.real.axis(a1[1:2], a1[3], a2[1:2], a2[3], a3[1:2], a3[3], a4[1:2], a4[3], test.data)
+    cross.test.real(a1[1:2], a1[3], a2[1:2], a2[3], a3[1:2], a3[3], a4[1:2], a4[3], test.data)
+    form.draw(a1[1], a2[1], a3[1], a4[1], a1[2], a2[2], a3[2], a4[2], a1[3], a2[3], a3[3], a3[3],
+       x.borders = x.borders, y.borders = y.borders)
 }
 
-pair.test(c(-20,-20,.01),c(-30,-30,.01),c(-5,5,10),c(-1,1,10),c(-20,10),c(-100,100))
+pair.test(c(-2,-2,1),c(0,0,1),c(-5,5,1),c(0,0.05,.1),c(-10,10),c(-10,10))
