@@ -244,29 +244,57 @@ cross.test.shifted.axis <- function(a1.center, a1.sd, a2.center, a2.sd, b1.cente
         }
 
         if (!is.null("label")) {
-            text(s[1], s[2], label)
+            text(s2[1], s2[2], label)
         }
     }
     cross.test.data.shifted(shifted)
 
-    draw.shifted(a1.center, a2.center)
-    draw.shifted(b1.center, b2.center)
+    draw.shifted(a1.center, a2.center,label="a")
+    draw.shifted(b1.center, b2.center,label="b")
 
     draw.shifted(a1.center, c(a1.center[1], 0), col = "blue", lty = "dotted", label = "a1")
     draw.shifted(a2.center, c(a2.center[1], 0), col = "blue", lty = "dotted", label = "a2")
     draw.shifted(b1.center, c(b1.center[1], 0), col = "blue", lty = "dotted", label = "b1")
     draw.shifted(b2.center, c(b2.center[1], 0), col = "blue", lty = "dotted", label = "b2")
 
+    line.x <- seq(min(to.draw[, "x"]) - 5, max(to.draw[, "x"]) + 5, by = .1)
+    var1 <- a1.sd ^ 2
+    var2 <- a2.sd ^ 2
+    x0 <- var1 / (var1 + var2) * (a2.center[1] - a1.center[1]) + a1.center[1]
+    y0 <- var1 * var2 / (var1 + var2)
+    
+    cf.1 <- make.coeffs(a1.center, a2.center)
+    u <- sqrt(((var2 - y0) / (a2.center[1] - x0) ^ 2) * (line.x - x0) ^ 2 + y0)
 
-    draw.shifted(a1.center + c(0, a1.sd), a2.center - c(0, a2.sd), col = "green", lty = "dotted")
-    draw.shifted(a1.center - c(0, a1.sd), a2.center + c(0, a2.sd), col = "green", lty = "dotted")
-    draw.shifted(a1.center + c(0, a1.sd), a2.center + c(0, a2.sd), col = "red", lty = "dotted")
-    draw.shifted(a1.center - c(0, a1.sd), a2.center - c(0, a2.sd), col = "red", lty = "dotted")
+    sh <- shift.fun(line.x, u * 2 + cf.1["k"] * line.x + cf.1["b"])
+    lines(sh[, "x"], sh[, "y"], col = "green", lty = "dotted", type = "l")
+    sh <- shift.fun(line.x, -u * 2 + cf.1["k"] * line.x + cf.1["b"])
+    lines(sh[, "x"], sh[, "y"], col = "green", lty = "dotted", type = "l")
 
-    draw.shifted(b1.center + c(0, b1.sd), b2.center + c(0, b2.sd), col = "red", lty = "dotted")
-    draw.shifted(b1.center - c(0, b1.sd), b2.center + c(0, b2.sd), col = "green", lty = "dotted")
-    draw.shifted(b1.center + c(0, b1.sd), b2.center - c(0, b2.sd), col = "green", lty = "dotted")
-    draw.shifted(b1.center - c(0, b1.sd), b2.center - c(0, b2.sd), col = "red", lty = "dotted")
+
+    var3 <- b1.sd ^ 2
+    var4 <- b2.sd ^ 2
+    x0 <- var3 / (var3 + var4) * (b2.center[1] - b1.center[1]) + b1.center[1]
+    y0 <- var3 * var4 / (var3 + var4)
+
+    cf.2 <- make.coeffs(b1.center, b2.center)
+    u <- sqrt(((var4 - y0) / (b2.center[1] - x0) ^ 2) * (line.x - x0) ^ 2 + y0)
+
+    sh <- shift.fun(line.x, u * 2 + cf.2["k"] * line.x + cf.2["b"])
+    lines(sh[, "x"], sh[, "y"], col = "red", lty = "dotted", type = "l")
+    sh <- shift.fun(line.x, - u * 2 + cf.2["k"] * line.x + cf.2["b"])
+    lines(sh[, "x"], sh[, "y"], col = "red", lty = "dotted", type = "l")
+
+
+    #draw.shifted(a1.center + c(0, a1.sd), a2.center - c(0, a2.sd), col = "green", lty = "dotted")
+    #draw.shifted(a1.center - c(0, a1.sd), a2.center + c(0, a2.sd), col = "green", lty = "dotted")
+    #draw.shifted(a1.center + c(0, a1.sd), a2.center + c(0, a2.sd), col = "red", lty = "dotted")
+    #draw.shifted(a1.center - c(0, a1.sd), a2.center - c(0, a2.sd), col = "red", lty = "dotted")
+
+    #draw.shifted(b1.center + c(0, b1.sd), b2.center + c(0, b2.sd), col = "red", lty = "dotted")
+    #draw.shifted(b1.center - c(0, b1.sd), b2.center + c(0, b2.sd), col = "green", lty = "dotted")
+    #draw.shifted(b1.center + c(0, b1.sd), b2.center - c(0, b2.sd), col = "green", lty = "dotted")
+    #draw.shifted(b1.center - c(0, b1.sd), b2.center - c(0, b2.sd), col = "red", lty = "dotted")
 
 
 
